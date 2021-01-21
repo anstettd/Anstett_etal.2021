@@ -1,6 +1,15 @@
-#################
-# Site*Year*Drought Mixed Models
-#################
+##################################################################################
+## Daniel Anstett
+## Plots of Site*Year*Drought Mixed Models using the visreg package
+## Generates Fig 2 and Fig S8
+## 3-way interactions are visualized regardless of significance to allow for easier visual comparison
+##
+## Last Modified January 21, 2020
+###################################################################################
+
+
+###################################################################################
+#Import libraries
 library(tidyverse)
 library(lme4)
 library(lmtest)
@@ -8,26 +17,27 @@ library(car)
 library(visreg)
 library(cowplot)
 
+###################################################################################
+#Imports main dataset
+y5 <- read.csv("Data/y5.csv", header=T) 
 
-y5 <- read.csv("Data/y5.csv", header=T) #Imports main dataset
+#Set factors
 y5$Block <- as.factor(y5$Block) ; y5$Family <- as.factor(y5$Family) # prep factors
 
+#Define regions
 y5<-y5 %>% mutate(Region = ifelse(Latitude >= 40, "North", 
                                   ifelse((Latitude >35) & (Latitude <40), "Center","South")))
 
 
+###################################################################################
+# Generate Fig 2
+###################################################################################
 
-############################################## Fig 2 #######################################################
-##### SLA ####
-fullmod.SLA <- lmer(SLA ~ Region*Year*Drought + (1|Family) + (1|Block) + (1|Site.Lat),
-                    control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)), data=y5)
-# drop 3way
-no3way.SLA <- lmer(SLA ~ Region*Drought + Drought*Year + Region*Year + (1|Family) + (1|Block) + (1|Site.Lat), 
-                   data=y5)
-lrtest(fullmod.SLA, no3way.SLA) # accept 3-way model
+######################################################################################################################
+# SLA
+######################################################################################################################
 
-#SLA Graphs
-fullmod.SLA <- lmer(SLA ~ Region*Year*Drought + (1|Family) + (1|Block) + (1|Site.Lat), data=y5)
+fullmod.SLA <- lmer(SLA ~ Region*Year*Drought + (1|Family) + (1|Block) + (1|Site.Lat), data=y5) # Run 3-way model
 vis_flower_D<-visreg(fullmod.SLA, xvar="Year", by="Region", cond=list(Drought="D")) #set up visreg for Drought
 vis_flower_W<-visreg(fullmod.SLA, xvar="Year", by="Region", cond=list(Drought="W")) #set up visreg for Wet
 Res_flower_D<-vis_flower_D$res ; Res_flower_W<-vis_flower_W$res # Extract residuals
@@ -37,9 +47,9 @@ Res_Flower_all$Region<-factor(Res_Flower_all$Region,levels=c("North","Center","S
 #Reorder Treatments
 Res_Flower_all$Drought <- as.factor(Res_Flower_all$Drought)
 Res_Flower_all$Drought <- factor(Res_Flower_all$Drought, levels=c("W", "D"))
-
 #Set up site lables equating names to codes
-Site_Labs<-c("North"="North", "Center"="Center", "South"="South")
+Site_Labs<-c("North"="A (North)", "Center"="B (Centre)", "South"="C (South)")
+#Use ggplot to generate plot with all required formating
 SLA_plot<-ggplot(Res_Flower_all, aes(Year, y=visregRes, fill=Drought, colour=Drought))+
   geom_jitter(aes(colour=Drought), size=0.2)+
   geom_smooth(method="lm")+
@@ -57,36 +67,14 @@ SLA_plot <-SLA_plot + theme(
 SLA_plot <-SLA_plot + facet_wrap(.~Region,labeller = labeller(Region=Site_Labs)) +
   theme(legend.title = element_blank(),legend.text = element_text(size=12,face="bold"),
         strip.background = element_blank(), strip.text.x=element_text(size=14,face="bold",hjust=0.05,vjust=-1.2))
-SLA_plot
-
 
 
 
 ######################################################################################################################
-##### Date of Flowering
-fullmod.exp <- lmer(Experiment_Date ~ Region*Year*Drought + (1|Family) + (1|Block)  + (1|Site.Lat), data=y5) #3way interaction model
-# drop 3way
-no3way.exp <- lmer(Experiment_Date ~ Region*Drought + Drought*Year + Region*Year + (1|Family) + (1|Block) + (1|Site.Lat), data=y5)
-####### Report this result #########
-lrtest(fullmod.exp, no3way.exp) # No sat diff. Retain 2-way.
-####################################
-# drop 2ways
-noDxY.exp <- lmer(Experiment_Date ~ Region*Drought + Region*Year+ (1|Family) + (1|Block) + (1|Site.Lat), data=y5)
-lrtest(no3way.exp,noDxY.exp) #no difference, pick simpler model
-SxYD.exp<- lmer(Experiment_Date ~ Region*Year + Drought + (1|Family) + (1|Block) + (1|Site.Lat), data=y5)
-lrtest(noDxY.exp,SxYD.exp) #noDxY.exp supported
-noRxD.exp <- lmer(Experiment_Date ~ Drought*Year+ Region*Year+ (1|Family) + (1|Block) + (1|Site.Lat), data=y5)
-lrtest(noDxY.exp,noRxD.exp) ###noDxY.exp supported###
-noRxY.exp <- lmer(Experiment_Date ~ Region*Drought + Drought*Year+ (1|Family) + (1|Block) + (1|Site.Lat), data=y5)
-lrtest(noDxY.exp,noRxY.exp) #noDxY.exp is equivalent to noRxY.exp
-lrtest(noRxY.exp,SxYD.exp) ###noRxY.exp supported###
+# Date of Flowering
+######################################################################################################################
 
-
-#SxY.exp<- lmer(Experiment_Date ~ Region*Year + (1|Family) + (1|Block), data=y5)
-#lrtest(SxYD.exp,SxY.exp) #Region*Year + Drought Supported
-
-#Date of Flowering Graphs
-finalmod.exp <- lmer(Experiment_Date ~ Region*Year*Drought + (1|Family) + (1|Block) + (1|Site.Lat), data=y5)
+finalmod.exp <- lmer(Experiment_Date ~ Region*Year*Drought + (1|Family) + (1|Block) + (1|Site.Lat), data=y5) # Run 3-way model
 vis_flower_D<-visreg(finalmod.exp, xvar="Year", by="Region", cond=list(Drought="D")) #set up visreg for Drought
 vis_flower_W<-visreg(finalmod.exp, xvar="Year", by="Region", cond=list(Drought="W")) #set up visreg for Wet
 Res_flower_D<-vis_flower_D$res ; Res_flower_W<-vis_flower_W$res # Extract residuals
@@ -97,7 +85,8 @@ Res_Flower_all$Region<-factor(Res_Flower_all$Region,levels=c("North","Center","S
 Res_Flower_all$Drought <- as.factor(Res_Flower_all$Drought)
 Res_Flower_all$Drought <- factor(Res_Flower_all$Drought, levels=c("W", "D"))
 #Set up site lables equating names to codes
-Site_Labs<-c("North"="North", "Center"="Center", "South"="South")
+Site_Labs<-c("North"="D (North)", "Center"="E (Centre)", "South"="F (South)")
+#Use ggplot to generate plot with all required formating
 Flower_plot<-ggplot(Res_Flower_all, aes(Year, y=visregRes, fill=Drought, colour=Drought))+
   geom_jitter(aes(colour=Drought), size=0.2)+
   geom_smooth(method="lm")+
@@ -116,41 +105,21 @@ Flower_plot <-Flower_plot + facet_wrap(.~Region,labeller = labeller(Region=Site_
   theme(legend.title = element_blank(),legend.text = element_text(size=12,face="bold"),
         strip.background = element_blank(), strip.text.x=element_text(size=14,face="bold",hjust=0.05,vjust=-1.2))
 
-
-## Cowplot export at 8 X 7
+## Cowplot export at 8 X 7 inches
 plot_grid(SLA_plot,Flower_plot,ncol = 1)
 
 
-############################################## Fig S2 #######################################################
+
+###################################################################################
+# Generate Fig S8
+###################################################################################
+
+
 ######################################################################################################################
-##### Water_Content ####
-fullmod.wc <- lmer(Water_Content ~ Region*Year*Drought + (1|Family) + (1|Block) + (1|Site.Lat),
-                   control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)),data=y5)
-# drop 3way
-no3way.wc <- lmer(Water_Content ~ Region*Drought + Drought*Year + Region*Year + (1|Family) + (1|Block) + (1|Site.Lat), data=y5)
-lrtest(fullmod.wc, no3way.wc) # two-way model supported
+# Water_Content 
+######################################################################################################################
 
-# drop 2ways
-noDxY.wc <- lmer(Water_Content ~ Region*Drought + Region*Year+ (1|Family) + (1|Block) + (1|Site.Lat),
-                 control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)),data=y5)
-lrtest(no3way.wc,noDxY.wc) #noDxY.wc supported
-SxYD.wc<- lmer(Water_Content ~ Region*Year + Drought + (1|Family) + (1|Block) + (1|Site.Lat), data=y5)
-lrtest(noDxY.wc,SxYD.wc) #SxYD.wc supported
-SxY.wc<- lmer(Water_Content ~ Region*Year + (1|Family) + (1|Block) + (1|Site.Lat), data=y5)
-lrtest(noDxY.wc,SxY.wc) #no difference
-
-#no interactions
-nox.wc <- lmer(Water_Content ~ Region + Year + Drought + (1|Family) + (1|Block) + (1|Site.Lat),
-               control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)),data=y5)
-lrtest(SxYD.wc,nox.wc) # no interactions model significantly better.
-lrtest(SxY.wc,nox.wc)  # no interactions model significantly better.
-noDrought.wc <- lmer(Water_Content ~ Region + Year + (1|Family) + (1|Block) + (1|Site.Lat),
-                     control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)),data=y5)
-lrtest(nox.wc, noDrought.wc) # no interactions model significantly better. Retain drought in model.
-
-
-#Water Content Graphs
-finalmod.wc <- lmer(Water_Content ~ Region*Year*Drought + (1|Family) + (1|Block) + (1|Site.Lat),
+finalmod.wc <- lmer(Water_Content ~ Region*Year*Drought + (1|Family) + (1|Block) + (1|Site.Lat), # Run 3-way model
                     control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)),data=y5)
 vis_flower_D<-visreg(finalmod.wc, xvar="Year", by="Region", cond=list(Drought="D")) #set up visreg for Drought
 vis_flower_W<-visreg(finalmod.wc, xvar="Year", by="Region", cond=list(Drought="W")) #set up visreg for Wet
@@ -163,6 +132,7 @@ Res_Flower_all$Drought <- as.factor(Res_Flower_all$Drought)
 Res_Flower_all$Drought <- factor(Res_Flower_all$Drought, levels=c("W", "D"))
 #Set up site lables equating names to codes
 Site_Labs<-c("North"="A (North)", "Center"="B (Centre)", "South"="C (South)")
+#Use ggplot to generate plot with all required formating
 WC_plot<-ggplot(Res_Flower_all, aes(Year, y=visregRes, fill=Drought, colour=Drought))+
   geom_jitter(aes(colour=Drought), size=0.2)+
   geom_smooth(method="lm")+
@@ -181,41 +151,12 @@ WC_plot <-WC_plot + facet_wrap(.~Region,labeller = labeller(Region=Site_Labs)) +
   theme(legend.title = element_blank(),legend.text = element_text(size=12,face="bold"),
         strip.background = element_blank(), strip.text.x=element_text(size=14,face="bold",hjust=0.05,vjust=-1.2))
 
+
 ######################################################################################################################
-######## Assimilation
-fullmod.A <- lmer(Assimilation ~ Region*Year*Drought + (1|Family) + (1|Block) + (1|Site.Lat),
-                  control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)), data=y5)
-# drop 3way
-no3way.A <- lmer(Assimilation ~ Region*Drought + Drought*Year + Region*Year + (1|Family) + (1|Block) + (1|Site.Lat), data=y5)
-lrtest(fullmod.A, no3way.A) # No difference
+# Assimilation
+######################################################################################################################
 
-# drop 2ways
-######## Selected Model #########
-noDxY.A <- lmer(Assimilation ~ Region*Drought + Region*Year+ (1|Family) + (1|Block) + (1|Site.Lat),
-                control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)),data=y5)
-################################
-lrtest(no3way.A,noDxY.A) #No difference
-SxYD.A<- lmer(Assimilation ~ Region*Year + Drought + (1|Family) + (1|Block) + (1|Site.Lat),
-              control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)),data=y5)
-lrtest(noDxY.A,SxYD.A) #noDxY.A marginally supported
-#SxY.A<- lmer(Assimilation ~ Region*Year + (1|Family) + (1|Block), data=y5)
-#lrtest(SxYD.A,SxY.A) #No difference
-
-#no interactions
-#nox.A <- lmer(Assimilation ~ Region + Year + Drought + (1|Family) + (1|Block),
-#               control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)),data=y5)
-#lrtest(SxYD.A,nox.A) # no interactions model significantly better.
-#noDrought.A <- lmer(Assimilation ~ Region + Year + (1|Family) + (1|Block), data=y5)
-#lrtest(nox.A, noDrought.A) # no interactions model significantly better. Retain drought in model.
-
-#noYear.A <- lmer(Assimilation ~ Region + Drought + (1|Family) + (1|Block), data=y5)
-
-#lrtest(nox.A, noYear.A) # Marginal support for Region + Drought model
-
-
-
-#Assimilation Graphs
-finalmod.A <- lmer(Assimilation ~ Region*Year*Drought + (1|Family) + (1|Block) + (1|Site.Lat),
+finalmod.A <- lmer(Assimilation ~ Region*Year*Drought + (1|Family) + (1|Block) + (1|Site.Lat), # Run 3-way model
                    control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)),data=y5)
 vis_flower_D<-visreg(finalmod.A, xvar="Year", by="Region", cond=list(Drought="D")) #set up visreg for Drought
 vis_flower_W<-visreg(finalmod.A, xvar="Year", by="Region", cond=list(Drought="W")) #set up visreg for Wet
@@ -229,6 +170,7 @@ Res_Flower_all$Drought <- factor(Res_Flower_all$Drought, levels=c("W", "D"))
 
 #Set up site lables equating names to codes
 Site_Labs<-c("North"="D (North)", "Center"="E (Centre)", "South"="F (South)")
+#Use ggplot to generate plot with all required formating
 A_plot<-ggplot(Res_Flower_all, aes(Year, y=visregRes, fill=Drought, colour=Drought))+
   geom_jitter(aes(colour=Drought), size=0.2)+
   geom_smooth(method="lm")+
@@ -247,32 +189,12 @@ A_plot <-A_plot + facet_wrap(.~Region,labeller = labeller(Region=Site_Labs)) +
   theme(legend.title = element_blank(),legend.text = element_text(size=12,face="bold"),
         strip.background = element_blank(), strip.text.x=element_text(size=14,face="bold",hjust=0.05,vjust=-1.2))
 
+
 ######################################################################################################################
-######## Stomatal Conductance
-fullmod.gs <- lmer(Stomatal_Conductance ~ Region*Year*Drought + (1|Family) + (1|Block) + (1|Site.Lat), 
-                   control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)), data=y5)
-# drop 3way
-no3way.gs <- lmer(Stomatal_Conductance ~ Region*Drought + Drought*Year + Region*Year + (1|Family) + (1|Block) + (1|Site.Lat), data=y5)
-lrtest(fullmod.gs, no3way.gs) #keep 3-way
-# drop 2ways
-noSxY.gs <- lmer(Stomatal_Conductance ~ Region*Drought + Drought*Year+ (1|Family) + (1|Block) + (1|Site.Lat),
-                 control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)),data=y5)
-lrtest(no3way.gs,noSxY.gs) # Remove Site X Year
-DxYS.gs<- lmer(Stomatal_Conductance ~ Drought*Year + Region +  (1|Family) + (1|Block) + (1|Site.Lat), data=y5)
-lrtest(noSxY.gs,DxYS.gs) # Remove Site X Drought
-#no interactions
-nox.gs <- lmer(Stomatal_Conductance ~ Region + Year + Drought + (1|Family) + (1|Block) + (1|Site.Lat), data=y5)
-lrtest(DxYS.gs,nox.gs) # no interactions model significantly better.
-noDrought.gs <- lmer(Stomatal_Conductance ~ Region + Year + (1|Family) + (1|Block) + (1|Site.Lat),
-                     control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)),data=y5)
-lrtest(nox.gs, noDrought.gs) # Marignal evidence for main effects model. Retain main effects model. 
+# Stomatal Conductance
+######################################################################################################################
 
-###############################
-#no.main.gs <- lmer(Stomatal_Conductance ~ (1|Family) + (1|Block), data=y5)
-#lrtest(Drought.gs, no.main.gs) # Drought better than nothing
-
-#Stomatal Conductance Graphs
-finalmod.gs <- lmer(Stomatal_Conductance ~ Region*Year*Drought + (1|Family) + (1|Block) + (1|Site.Lat), data=y5)
+finalmod.gs <- lmer(Stomatal_Conductance ~ Region*Year*Drought + (1|Family) + (1|Block) + (1|Site.Lat), data=y5)  # Run 3-way model
 vis_flower_D<-visreg(finalmod.gs, xvar="Year", by="Region", cond=list(Drought="D")) #set up visreg for Drought
 vis_flower_W<-visreg(finalmod.gs, xvar="Year", by="Region", cond=list(Drought="W")) #set up visreg for Wet
 Res_flower_D<-vis_flower_D$res ; Res_flower_W<-vis_flower_W$res # Extract residuals
@@ -285,6 +207,7 @@ Res_Flower_all$Drought <- factor(Res_Flower_all$Drought, levels=c("W", "D"))
 
 #Set up site lables equating names to codes
 Site_Labs<-c("North"="G (North)", "Center"="H (Centre)", "South"="I (South)")
+#Use ggplot to generate plot with all required formating
 gs_plot<-ggplot(Res_Flower_all, aes(Year, y=visregRes, fill=Drought, colour=Drought))+
   geom_jitter(aes(colour=Drought), size=0.2)+
   geom_smooth(method="lm")+
@@ -303,7 +226,7 @@ gs_plot <-gs_plot + facet_wrap(.~Region,labeller = labeller(Region=Site_Labs)) +
   theme(legend.title = element_blank(),legend.text = element_text(size=12,face="bold"),
         strip.background = element_blank(), strip.text.x=element_text(size=14,face="bold",hjust=0.05,vjust=-1.2))
 
-## Cowplot export at 11 X 7
+## Cowplot export at 11 X 7 inches
 plot_grid(WC_plot,A_plot,gs_plot,ncol = 1)
 
 

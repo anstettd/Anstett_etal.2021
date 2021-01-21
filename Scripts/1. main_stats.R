@@ -1,6 +1,6 @@
 ##################################################################################
 ## Daniel Anstett
-## Mixed models to test rapid evolution to drought
+## Mixed models to test rapid evolution to drought using the lme4 and lmtest
 ## Testing the impact of Region, Year and Drought Treatment
 ## Family, block and year are random variables
 ##
@@ -34,7 +34,6 @@ y5<-y5 %>% mutate(Region = ifelse(Latitude >= 40, "North",
 ######################################################################################################################
 # SLA
 ######################################################################################################################
-
 #Run mixed model with full 3-way interaction
 fullmod.SLA <- lmer(SLA ~ Region*Year*Drought + (1|Family) + (1|Block) + (1|Site.Lat),
                     control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)), data=y5)
@@ -47,7 +46,6 @@ lrtest(fullmod.SLA, no3way.SLA) # accept 3-way model
 ######################################################################################################################
 # Date of Flowering 
 ######################################################################################################################
-
 #Run mixed model with full 3-way interaction
 fullmod.exp <- lmer(Experiment_Date ~ Region*Year*Drought + (1|Family) + (1|Block)  + (1|Site.Lat), data=y5) #3way interaction model
 # drop 3way
@@ -90,7 +88,6 @@ lrtest(noRxY.exp,RD.Y.exp) # No difference
 ######################################################################################################################
 # Water_Content
 ######################################################################################################################
-
 #Run mixed model with full 3-way interaction
 fullmod.wc <- lmer(Water_Content ~ Region*Year*Drought + (1|Family) + (1|Block) + (1|Site.Lat),
                    control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)),data=y5)
@@ -164,7 +161,6 @@ lrtest(noRxY.wc,DY.R.wc) #Simpler model significantly supported)
 ######################################################################################################################
 # Assimilation
 ######################################################################################################################
-
 #Run mixed model with full 3-way interaction
 fullmod.A <- lmer(Assimilation ~ Region*Year*Drought + (1|Family) + (1|Block) + (1|Site.Lat),
                   control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)), data=y5)
@@ -209,7 +205,6 @@ lrtest(noRxY.A,RD.Y.A) # No difference
 ######################################################################################################################
 # Stomatal Conductance
 ######################################################################################################################\
-
 #Run mixed model with full 3-way interaction
 fullmod.gs <- lmer(Stomatal_Conductance ~ Region*Year*Drought + (1|Family) + (1|Block) + (1|Site.Lat),
                    control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)),data=y5)
