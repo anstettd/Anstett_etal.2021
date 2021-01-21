@@ -1,25 +1,41 @@
-#################
-# Site*Year*Drought Mixed Models
-#################
+##################################################################################
+## Daniel Anstett
+## Mixed models to test rapid evolution to drought
+## Testing the impact of Region, Year and Drought Treatment
+## Family, block and year are random variables
+##
+## Last Modified January 21, 2020
+###################################################################################
+
+
+###################################################################################
+#Import libraries
 library(tidyverse)
-#library(lme4)
-#library(lmtest)
-library(car)
-library(visreg)
-library(cowplot)
 library(lme4)
 library(lmtest)
 
+###################################################################################
+#Imports main dataset
+y5 <- read.csv("Data/y5.csv", header=T)
 
-y5 <- read.csv("Data/y5.csv", header=T) #Imports main dataset
+#Set factors
 y5$Block <- as.factor(y5$Block) ; y5$Family <- as.factor(y5$Family) # prep factors
 
+#Define regions
 y5<-y5 %>% mutate(Region = ifelse(Latitude >= 40, "North", 
                                   ifelse((Latitude >35) & (Latitude <40), "Center","South")))
 
-######################################################################################################################
-##### SLA ####
 
+###################################################################################
+# Site*Year*Drought Mixed Models
+###################################################################################
+
+
+######################################################################################################################
+# SLA
+######################################################################################################################
+
+#Run mixed model with full 3-way interaction
 fullmod.SLA <- lmer(SLA ~ Region*Year*Drought + (1|Family) + (1|Block) + (1|Site.Lat),
                     control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)), data=y5)
 # drop 3way
@@ -27,9 +43,12 @@ no3way.SLA <- lmer(SLA ~ Region*Drought + Drought*Year + Region*Year + (1|Family
                    data=y5)
 lrtest(fullmod.SLA, no3way.SLA) # accept 3-way model
 
-######################################################################################################################
-##### Date of Flowering
 
+######################################################################################################################
+# Date of Flowering 
+######################################################################################################################
+
+#Run mixed model with full 3-way interaction
 fullmod.exp <- lmer(Experiment_Date ~ Region*Year*Drought + (1|Family) + (1|Block)  + (1|Site.Lat), data=y5) #3way interaction model
 # drop 3way
 no3way.exp <- lmer(Experiment_Date ~ Region*Drought + Drought*Year + Region*Year + (1|Family) + (1|Block) + (1|Site.Lat), data=y5)
@@ -69,7 +88,10 @@ RD.Y.exp<- lmer(Experiment_Date ~ Region*Drought + Year + (1|Family) + (1|Block)
 lrtest(noRxY.exp,RD.Y.exp) # No difference
 
 ######################################################################################################################
-##### Water_Content ####
+# Water_Content
+######################################################################################################################
+
+#Run mixed model with full 3-way interaction
 fullmod.wc <- lmer(Water_Content ~ Region*Year*Drought + (1|Family) + (1|Block) + (1|Site.Lat),
                    control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)),data=y5)
 # drop 3way
@@ -115,7 +137,6 @@ none.wc<-lmer(Water_Content ~ (1|Family) + (1|Block) + (1|Site.Lat),
 lrtest(D.wc,none.wc) # Drought supported
 
 
-
 ### Other removals show same pattern
 ## 1 ## Here I remove Region * Drought first
 noRxD.wc <- lmer(Water_Content ~ Drought*Year+ Region*Year + (1|Family) + (1|Block) + (1|Site.Lat), data=y5)
@@ -130,18 +151,21 @@ lrtest(noRxD.wc,RY.Y.wc) #Simpler model significally supported
 ## 3 ## Remove Region * Year instead.
 noRxY.wc <- lmer(Water_Content ~ Region*Drought + Drought*Year+ (1|Family) + (1|Block) + (1|Site.Lat),
                  control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)),data=y5)
-lrtest(no3way.wc,noRxY.wc) #Simpler model significally supported 
+lrtest(no3way.wc,noRxY.wc) #Simpler model significantly supported 
 noRxY.wc <- lmer(Water_Content  ~ Region*Drought + Drought*Year+ (1|Family) + (1|Block) + (1|Site.Lat), 
                  control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)),data=y5)
-lrtest(no3way.wc,noRxY.wc) #Simpler model significally supportedl. 
+lrtest(no3way.wc,noRxY.wc) #Simpler model significantly supportedl. 
 # A # Remove Region * Drought
-lrtest(noRxY.wc,RY.D.wc) #Simpler model significally supported
+lrtest(noRxY.wc,RY.D.wc) #Simpler model significantly supported
 # B # Remove Drought * Year
 DY.R.wc<- lmer(Water_Content  ~ Drought*Year + Region + (1|Family) + (1|Block) + (1|Site.Lat), data=y5)
-lrtest(noRxY.wc,DY.R.wc) #Simpler model significally supported)
+lrtest(noRxY.wc,DY.R.wc) #Simpler model significantly supported)
 
 ######################################################################################################################
-######## Assimilation
+# Assimilation
+######################################################################################################################
+
+#Run mixed model with full 3-way interaction
 fullmod.A <- lmer(Assimilation ~ Region*Year*Drought + (1|Family) + (1|Block) + (1|Site.Lat),
                   control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)), data=y5)
 # drop 3way
@@ -181,8 +205,12 @@ lrtest(noRxY.A,DY.R.A) # No difference, select Region*Drought + Year (simpler mo
 RD.Y.A<- lmer(Assimilation ~ Region*Drought + Year + (1|Family) + (1|Block) + (1|Site.Lat), data=y5)
 lrtest(noRxY.A,RD.Y.A) # No difference
 
+
 ######################################################################################################################
-######## Stomatal Conductance
+# Stomatal Conductance
+######################################################################################################################\
+
+#Run mixed model with full 3-way interaction
 fullmod.gs <- lmer(Stomatal_Conductance ~ Region*Year*Drought + (1|Family) + (1|Block) + (1|Site.Lat),
                    control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)),data=y5)
 # drop 3way
@@ -224,7 +252,6 @@ none.gs<-lmer(Stomatal_Conductance ~ (1|Family) + (1|Block) + (1|Site.Lat), data
 lrtest(D.gs,none.gs) # Drought supported
 
 
-
 ### Other removals show same pattern
 ## 1 ## Here I remove Region * Drought first
 noRxD.gs <- lmer(Stomatal_Conductance ~ Drought*Year+ Region*Year + (1|Family) + (1|Block) + (1|Site.Lat), data=y5)
@@ -248,34 +275,3 @@ lrtest(noRxY.gs,RY.D.gs) #Simpler model significally supported
 # B # Remove Drought * Year
 DY.R.gs<- lmer(Stomatal_Conductance  ~ Drought*Year + Region + (1|Family) + (1|Block) + (1|Site.Lat), data=y5)
 lrtest(noRxY.gs,DY.R.gs) #Simpler model significally supported)
-
-
-##### Satterthwaite approx using lmertest package
-
-#SLA
-anova(fullmod.SLA)
-summary(fullmod.SLA)
-step(fullmod.SLA)
-
-#Date of Flowering
-anova(DY.R.exp)
-summary(DY.R.exp)
-step(fullmod.exp)
-
-#Water_Content
-anova(D.wc)
-summary(D.wc)
-step(fullmod.wc)
-
-#Assimilation
-anova(DY.R.A)
-summary(DY.R.A)
-step(fullmod.A)
-
-#Stomatal Conductance
-anova(D.gs)
-summary(D.gs)
-step(fullmod.gs)
-
-
-
