@@ -1,19 +1,32 @@
-#################
-# Get weather data into Oct 1 to Sept 31 format
-#################
-# Also assessment of normality
+##################################################################################
+## Daniel Anstett
+## CALCULATE WEATHER FOR 2010-2016 
+## Convert monthly temp & precip data October to September Annual Weather Data
+##   
+## Fairly Simple using the BIOVARS function in the 'dimso' package
+## Last Modified January 21, 2020
+###################################################################################
+
+# Monthly climate data obtained from Climate NA 
+# http://climatena.ca/
+
+######################################################################
+#Load Libraries
 library(tidyverse)
-library(lsmeans)
-library(car)
-library(maptools)
-library(visreg)
-library(nlme)
-library(ggplot2)
-library(lme4)
-library(lmtest)
+#library(lsmeans)
+#library(car)
+#library(maptools)
+#library(visreg)
+#library(nlme)
+#library(ggplot2)
+#library(lme4)
+#library(lmtest)
+######################################################################
 
+# Get weather data into Oct 1 to Sept 31 format
+
+# Read meta data
 wna1 <- read_csv("Climate/timeseries_lat_2010-2016.csv")
-
 impact_all <- wna1 %>% select(ID_Year1,Year,Elevation)
 impact_all_sum <- wna1 %>% select(ID_Year1,Year,Elevation)
 
