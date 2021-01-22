@@ -1,24 +1,45 @@
-#################
-# Slopes by Region 
-# Please NOTE: Must run entire script at once (or each section sequentially) to get correct tabulation. 
-# Please clear the env if you are re-running the code
-#################
+##################################################################################
+## Daniel Anstett
+## Change in drought associated traits over time (slopes)
+## Script aquires sloeps of regression line from visreg plots of Site*Year*Drought Mixed Models
+## Generates Fig 3
+##
+## Last Modified January 22, 2020
+###################################################################################
+
+###################################################################################
+#Import libraries
 library(tidyverse)
 library(lme4)
 library(lmtest)
 library(car)
 library(visreg)
+###################################################################################
 
-y5 <- read.csv("Data/y5.csv", header=T) #Imports main dataset
-slope.reg <- read.csv("Data/slopes.region.csv", header=T) #Imports 
+
+###################################################################################
+#Imports main dataset
+y5 <- read.csv("Data/y5.csv", header=T)
+
+#Read meta data
+slope.reg <- read.csv("Data/slopes.region.csv", header=T)
+
+#Set factors
 y5$Block <- as.factor(y5$Block) ; y5$Family <- as.factor(y5$Family) # prep factors
+
+#Define regions on main file
 y5<-y5 %>% mutate(Region = ifelse(Latitude >= 40, "1.North", 
                                   ifelse((Latitude >35) & (Latitude <40), "2.Center","3.South")))
+
+# Set up vectors with treatment and regional information
 treatment.v<-c("W", "D")
 region.v<-c("1.North", "2.Center", "3.South")
 order.row<-1
 
-#SLA Vs Year
+
+###################################################################################
+###################################################################################
+#Get slopes of SLA Vs Year
 fullmod.SLA <- lmer(SLA ~ Region*Year*Drought + (1|Family) + (1|Block) + (1|Site.Lat),
                     control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)), data=y5)
 for (i in 1:2){
@@ -35,7 +56,7 @@ for (i in 1:2){
   }
 }
 
-#FT Vs Year
+#Get slopes of Date of FLowering Vs Year
 fullmod.FT <- lmer(Experiment_Date ~ Region*Year*Drought + (1|Family) + (1|Block) + (1|Site.Lat),
                     control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)), data=y5)
 for (i in 1:2){
@@ -53,7 +74,7 @@ for (i in 1:2){
 }
 
 
-#WC Vs Year
+#Get slopes of Water Content Vs Year
 fullmod.WC <- lmer(Water_Content ~ Region + Year + Drought + (1|Family) + (1|Block) + (1|Site.Lat),
                     control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)), data=y5)
 
@@ -72,7 +93,7 @@ for (i in 1:2){
 }
 
 
-#Assimilation Vs Year
+#Get slopes of Assimilation Vs Year
 fullmod.A <- lmer(Assimilation ~ Region*Year*Drought + (1|Family) + (1|Block) + (1|Site.Lat),
                     control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)), data=y5)
 for (i in 1:2){
@@ -89,7 +110,7 @@ for (i in 1:2){
   }
 }
 
-#Stomatal Conductance Vs Year
+#Get slopes of Stomatal Conductance Vs Year
 fullmod.gs <- lmer(Stomatal_Conductance ~ Region*Year*Drought  + (1|Family) + (1|Block) + (1|Site.Lat),
                     control=lmerControl(optimizer = "bobyqa", optCtrl=list(maxfun=100000)), data=y5)
 for (i in 1:2){
@@ -106,6 +127,7 @@ for (i in 1:2){
   }
 }
 
+###################################################################################
 #Add in dummy varaible to organize X-axis into showing Wet and Dry seperately per region
 slope.reg<- slope.reg %>% mutate(x_order=paste(Region,Drought,sep="_"))
 
@@ -118,9 +140,6 @@ slope.reg<- slope.reg %>% mutate(order.var=ifelse(Variable == "SLA", 1,
 #Set correct order for all levels
 slope.reg$Variable<-as.factor(slope.reg$Variable)
 slope.reg$Variable<-factor(slope.reg$Variable,levels=c("SLA","FT","WC","A","gs"))
-#slope.reg$Trait_D<-as.factor(slope.reg$Trait_D)
-#slope.reg$Trait_D<-factor(slope.reg$Trait_D,levels=c("SLA_Wet","SLA_Dry","FT_Wet","FT_Dry","WC_Wet", "WC_Dry",
-#                                                   "A_Wet","A_Dry","gs_Wet","gs_Dry"))
 slope.reg$Drought<-as.factor(slope.reg$Drought)
 slope.reg$Drought<-factor(slope.reg$Drought,levels=c("Wet","Dry"))
 slope.reg$x_order<-as.factor(slope.reg$x_order)
@@ -128,7 +147,9 @@ slope.reg$x_order<-factor(slope.reg$x_order,levels=c("1.North_Wet", "1.North_Dry
                                                    "3.South_Wet","3.South_Dry"))
 
 
-# Slope By Trait
+###################################################################################
+###################################################################################
+# Plot slopes across traits and treatments
 Trait_Labs<-c("SLA"="(A) SLA", "FT"=" (B) Date of Flowering", "WC"="(C) Water Content", 
               "A"="(D) Assimilation","gs"="(E) Stomatal Conductance")
 ggplot(slope.reg, aes(x=x_order, y=Slopes, fill=Drought)) + 
@@ -149,30 +170,6 @@ ggplot(slope.reg, aes(x=x_order, y=Slopes, fill=Drought)) +
                             "2.Center_Wet" = "Center","2.Center_Dry" = "",
                             "3.South_Wet" = "South","3.South_Dry" = ""))
 
-#ggsave("Slopes_all_traits.pdf", width = 7, height = 7, units = "in")
-
-
-
-# Slope for SLA & FT
-slope.SLA.FT<-slope.reg %>% filter(Variable=="SLA" | Variable=="FT")
-Trait_Labs<-c("SLA"="A   SLA", "FT"="B   Date of Flowering")
-ggplot(slope.SLA.FT, aes(x=x_order, y=Slopes, fill=Drought)) + 
-  geom_bar(stat = "identity")+
-  scale_fill_manual(values= c("Wet"="#006600","Dry"="#FF7700")) +
-  scale_y_continuous(name="Slope",limits=c(-0.2,0.2))+
-  geom_errorbar(mapping=aes(ymin=Slopes-Slopes_STDER, ymax=Slopes+Slopes_STDER), width=0.2, size=1)+
-  geom_hline(yintercept=0)+
-  theme( axis.title.x=element_blank(),
-         #axis.ticks.x = element_blank(),
-         axis.text.x = element_text(size=16, face="bold", angle=0,hjust=0.15,vjust = 0.5),
-         axis.text.y = element_text(size=12,face="bold"),
-         axis.title.y = element_text(color="black", size=16,vjust = 2, face="bold",hjust=0.5))+
-  facet_wrap(.~Variable,nrow=3,ncol=2,labeller = labeller(Variable=Trait_Labs)) +
-  theme(legend.title = element_blank(),legend.text = element_text(size=14,face="bold"),
-        strip.background = element_blank(), strip.text.x=element_text(size=14,face="bold",hjust=0.05,vjust=0))+
-  scale_x_discrete(labels=c("1.North_Wet" = "North", "1.North_Dry" = "", 
-                            "2.Center_Wet" = "Center","2.Center_Dry" = "",
-                            "3.South_Wet" = "South","3.South_Dry" = ""))
-#ggsave("Slopes_SLA_FT.pdf", width = 7, height = 4.5, units = "in")
-
-
+#Save Fig S3
+#ggsave("Slopes_all_traits.pdf", width = 7, height = 7, units = "in") 
+##################################################################################

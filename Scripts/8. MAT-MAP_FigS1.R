@@ -1,17 +1,31 @@
-#################
-# Generate MAT and MAP Fig S1, Paper 1
-#################
+##################################################################################
+## Daniel Anstett
+## Generate Fig S1 using Temperature and Precipitation data
+## MAT = Mean Annual Temperature ,MAP = Mean Annual Precipitation
+## 
+##
+## Last Modified January 22, 2020
+###################################################################################
 
+
+###################################################################################
+#Import libraries
 library(tidyverse)
 library(cowplot)
 
 
-##### MAT ####
 
+###################################################################################
+# Mean Annual Temperature (MAT)
 
-### Fig S1A, make MAT plot for 1979 to 2009 ###
+###################################################################################
+###################################################################################
+# Fig S1A, make MAT plot for 1979 to 2009
 
-m_year<-read.csv('Data/m_year.csv', header=T) #Imports 30 years of Mimulus climate data
+#Imports 30 years of Mimulus climate data
+m_year<-read.csv('Data/m_year.csv', header=T) 
+
+#Set up dataframe with correct region information
 colnames(m_year)[2]<-"Site"
 m_year<-m_year %>% filter(Site!="S11")
 m_year<-m_year %>% mutate(Region = ifelse(Latitude >= 40, "North", 
@@ -23,7 +37,7 @@ Site.lable<-c("32.89928_S02"="1","34.28425_S07"="2","36.20081_S10"="3","36.69096
               "37.539_S32"="5","39.39442_S29"="6","39.74298_S18"="7", "41.66546_S17"="8", 
               "41.80979_S16"="9","42.27411_S36"="10","43.37876_S15"="11")
 
-#Make Graph
+#Use ggplot to generate plot with all required formating
 MAT_Lat<-ggplot(m_year, aes(x=Site.Lat, y=MAT,fill=Region))+ 
   geom_boxplot()+
   scale_y_continuous(name="MAT",limits=c(5,20))+
@@ -40,23 +54,26 @@ MAT_Lat<-MAT_Lat + theme(legend.position = "none",
                          axis.title.y = element_text(size=16,vjust = 1, face="bold"))+
   scale_x_discrete(labels=Site.lable)
 MAT_Lat
-#ggsave("Fig S1A.pdf", width = 4, height = 7, units = "in")
 
+###################################################################################
+###################################################################################
+# Fig S1B, make MAT CV plot for 1979 to 2009
 
+#Imports the mean of 30 years of Mimulus climate data
+CV_climate<-read.csv('Data/climate.csv', header=T) 
 
+#Set up dataframe with correct region information
+colnames(CV_climate)[2]<-"Site" ; CV_climate<-CV_climate %>% filter(Site!="S11")
 
-
-### Fig S1B, make MAT CV plot for 1979 to 2009 ###
-
-CV_climate<-read.csv('Data/climate.csv', header=T) #Imports 30 years of Mimulus climate data
-colnames(CV_climate)[2]<-"Site" ; CV_climate<-CV_climate %>% filter(Site!="S11") #Clean up data set
+# Calculate coefficient of variation
 CV_climate<-CV_climate %>% select(Site,ID2,Latitude,Longitude)
-m_year<-m_year %>% mutate(MAT_K=MAT+273.15)
-for (i in 1:11){ # calculate CV
+m_year<-m_year %>% mutate(MAT_K=MAT+273.15) #Convert Temperature to Kelvin
+for (i in 1:11){
   site.select<-m_year %>% filter(Site==CV_climate$Site[i])
   CV_climate[i,5]<-sd(site.select$MAT_K)/mean(site.select$MAT_K)
 }
 colnames(CV_climate)[5]<-"MAT.CV"
+
 #Add in Region and Site.Lat
 CV_climate<-CV_climate %>% mutate(Region = ifelse(Latitude >= 40, "North", 
                                                   ifelse((Latitude >35) & (Latitude <40), "Centre","South"))) %>%
@@ -67,10 +84,7 @@ Site.lable<-c("32.89928_S02"="1","34.28425_S07"="2","36.20081_S10"="3","36.69096
               "37.539_S32"="5","39.39442_S29"="6","39.74298_S18"="7", "41.66546_S17"="8", 
               "41.80979_S16"="9","42.27411_S36"="10","43.37876_S15"="11")
 
-
-
-
-#Dot graph
+#Use ggplot to generate plot with all required formating
 MAT_CV_Lat<-ggplot(CV_climate, aes(x=Site.Lat, y=MAT.CV))+ 
   geom_point(aes(fill=Region),size=5, shape=21,color="black")+
   scale_y_continuous(name="MAT CV")+
@@ -86,12 +100,15 @@ MAT_CV_Lat<-MAT_CV_Lat + theme(legend.position = "none",
                        axis.title.y = element_text(size=16,vjust = 0, face="bold",hjust=0.5))+
   scale_x_discrete(labels=Site.lable)
 MAT_CV_Lat
-#ggsave("Fig 1B.pdf", width = 4, height = 7, units = "in")
 
+###################################################################################
+###################################################################################
+# Fig S1C, make Mean Annual Temperature Anomaly (MATA) plot per site.lat 2010 - 2016 
 
-### Fig S1C, make MATA plot per site.lat 2010 - 2016 ###
+#Imports MATA for all sites across each year
+wna.all<-read.csv('Data/wna_all.csv', header=T) 
 
-wna.all<-read.csv('Data/wna_all.csv', header=T) #Imports CMDA for all site/year cominbations
+#Set up dataframe with correct region information
 wna.all<-wna.all %>% filter(Site!="S11")
 wna.all<-wna.all %>% mutate(Region = ifelse(Latitude >= 40, "North", 
                                             ifelse((Latitude >35) & (Latitude <40), "Centre","South"))) %>%
@@ -102,8 +119,7 @@ Site.lable<-c("32.89928_S02"="1","34.28425_S07"="2","36.20081_S10"="3","36.69096
               "37.539_S32"="5","39.39442_S29"="6","39.74298_S18"="7", "41.66546_S17"="8", 
               "41.80979_S16"="9","42.27411_S36"="10","43.37876_S15"="11")
 
-
-#Dot graph with year plotted
+#Use ggplot to generate plot with all required formating
 MATA_Lat<-ggplot(wna.all, aes(x=Site.Lat, y=MAT.anom, shape=factor(Year), col=factor(Region)))+ 
   geom_point(aes(fill=Region), size =5)+
   scale_shape_manual(values =c(48:54))+
@@ -121,19 +137,19 @@ MATA_Lat<-MATA_Lat + theme(legend.position = "none",
                            axis.title.y = element_text(size=16,vjust = 0, face="bold",hjust=0.5))+
   scale_x_discrete(labels=Site.lable)
 MATA_Lat
-#ggsave("Fig 1SC_point.pdf", width = 4, height = 7, units = "in")
 
 
+###################################################################################
+# Mean Annual Precipitation (MAP)
 
+###################################################################################
+###################################################################################
+# Fig S1D, make MAP plot for 1979 to 2009
 
+#Imports 30 years of Mimulus climate data
+m_year<-read.csv('Data/m_year.csv', header=T) 
 
-
-#### MAP ####
-
-
-### Fig S1D, make MAP plot for 1979 to 2009 ###
-
-m_year<-read.csv('Data/m_year.csv', header=T) #Imports 30 years of Mimulus climate data
+#Set up dataframe with correct region information
 colnames(m_year)[2]<-"Site"
 m_year<-m_year %>% filter(Site!="S11")
 m_year<-m_year %>% mutate(Region = ifelse(Latitude >= 40, "North", 
@@ -145,7 +161,7 @@ Site.lable<-c("32.89928_S02"="1","34.28425_S07"="2","36.20081_S10"="3","36.69096
               "37.539_S32"="5","39.39442_S29"="6","39.74298_S18"="7", "41.66546_S17"="8", 
               "41.80979_S16"="9","42.27411_S36"="10","43.37876_S15"="11")
 
-#Make Graph
+#Use ggplot to generate plot with all required formating
 MAP_Lat<-ggplot(m_year, aes(x=Site.Lat, y=MAP,fill=Region))+ 
   geom_boxplot()+
   scale_y_continuous(name="MAP", limits=c(1,2000))+
@@ -163,22 +179,29 @@ MAP_Lat<-MAP_Lat + theme(legend.position = "none",
                          axis.title.y = element_text(size=16,vjust = 1, face="bold"))+
   scale_x_discrete(labels=Site.lable)
 MAP_Lat
-#ggsave("Fig S1D.pdf", width = 4, height = 7, units = "in")
 
 
 
 
 
+###################################################################################
+###################################################################################
 ### Fig S1E, make MAP CV plot for 1979 to 2009 ###
 
-CV_climate<-read.csv('Data/climate.csv', header=T) #Imports 30 years of Mimulus climate data
+#Imports the mean of 30 years of Mimulus climate data
+CV_climate<-read.csv('Data/climate.csv', header=T)
+
+#Set up dataframe with correct region information
 colnames(CV_climate)[2]<-"Site" ; CV_climate<-CV_climate %>% filter(Site!="S11") #Clean up data set
 CV_climate<-CV_climate %>% select(Site,ID2,Latitude,Longitude)
-for (i in 1:11){ # calculate CV
+
+# Calculate coefficient of variation
+for (i in 1:11){ 
   site.select<-m_year %>% filter(Site==CV_climate$Site[i])
   CV_climate[i,5]<-sd(site.select$MAP)/mean(site.select$MAP)
 }
 colnames(CV_climate)[5]<-"MAP.CV"
+
 #Add in Region and Site.Lat
 CV_climate<-CV_climate %>% mutate(Region = ifelse(Latitude >= 40, "North", 
                                                   ifelse((Latitude >35) & (Latitude <40), "Centre","South"))) %>%
@@ -190,7 +213,7 @@ Site.lable<-c("32.89928_S02"="1","34.28425_S07"="2","36.20081_S10"="3","36.69096
               "41.80979_S16"="9","42.27411_S36"="10","43.37876_S15"="11")
 
 
-#Dot graph
+#Use ggplot to generate plot with all required formating
 MAP_CV_Lat<-ggplot(CV_climate, aes(x=Site.Lat, y=MAP.CV))+ 
   geom_point(aes(fill=Region),size=5, shape=21,color="black")+
   scale_y_continuous(name="MAP CV",limits=c(0.2,0.5))+
@@ -206,12 +229,17 @@ MAP_CV_Lat<-MAP_CV_Lat + theme(legend.position = "none",
                                axis.title.y = element_text(size=16,vjust = 0, face="bold",hjust=0.5))+
   scale_x_discrete(labels=Site.lable)
 MAP_CV_Lat
-#ggsave("Fig 1E.pdf", width = 4, height = 7, units = "in")
 
 
+###################################################################################
+###################################################################################
 ### Fig S1F, make MAPA plot per site.lat 2010 - 2016 ###
 
-wna.all<-read.csv('Data/wna_all.csv', header=T) #Imports CMDA for all site/year cominbations
+#Imports MATA for all sites across each year
+wna.all<-read.csv('Data/wna_all.csv', header=T) 
+
+
+
 wna.all<-wna.all %>% filter(Site!="S11")
 wna.all<-wna.all %>% mutate(Region = ifelse(Latitude >= 40, "North", 
                                             ifelse((Latitude >35) & (Latitude <40), "Centre","South"))) %>%
@@ -223,7 +251,7 @@ Site.lable<-c("32.89928_S02"="1","34.28425_S07"="2","36.20081_S10"="3","36.69096
               "41.80979_S16"="9","42.27411_S36"="10","43.37876_S15"="11")
 
 
-#Dot graph
+#Use ggplot to generate plot with all required formating
 MAPA_Lat<-ggplot(wna.all, aes(x=Site.Lat, y=MAP.anom, shape=factor(Year), col=factor(Region)))+ 
   geom_point(aes(fill=Region),size=5)+
   scale_shape_manual(values =c(48:54))+
@@ -241,14 +269,11 @@ MAPA_Lat<-MAPA_Lat + theme(legend.position = "none",
                            axis.title.y = element_text(size=16,vjust = 0, face="bold",hjust=0.5))+
   scale_x_discrete(labels=Site.lable)
 MAPA_Lat
-#ggsave("Fig 1SF_point.pdf", width = 4, height = 7, units = "in")
 
-
-
-
-#Cowplot, 8 X 12
+###################################################################################
+#Place all six figures into one output using Cowplot. Export at  8 X 12 inches
 plot_grid(MAT_Lat,MAT_CV_Lat,MATA_Lat,MAP_Lat,MAP_CV_Lat,MAPA_Lat, ncol = 3,
           labels = c('A', 'B', 'C', 'D', 'E', 'F'), label_size = 16)
-
+###################################################################################
 
 

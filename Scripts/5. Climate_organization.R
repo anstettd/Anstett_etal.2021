@@ -1,9 +1,20 @@
-#################
-# Get weather data into Oct 1 to Sept 31 format
-#################
-# Also assessment of normality
+##################################################################################
+## Daniel Anstett
+## CALCULATE CLIMATE FOR 2010-2016 
+## Convert monthly temp & precip data October (of the previous year) to September Climate Data
+## Average across calcualted years 1980 to 2009 
+## 
+## Last Modified January 22, 2020
+###################################################################################
+
+# Monthly climate data obtained from Climate NA 
+# http://climatena.ca/
+
+###################################################################################
+#Load Libraries
 library(tidyverse)
 
+###################################################################################
 
 #Import datasets and add year_actual variable
 weather_1979 <- read.csv("Climate/timeseries_monthly_1979.csv", header=T)
@@ -38,7 +49,8 @@ weather_2007 <- read.csv("Climate/timeseries_monthly_2007.csv", header=T)
 weather_2008 <- read.csv("Climate/timeseries_monthly_2008.csv", header=T)
 weather_2009 <- read.csv("Climate/timeseries_monthly_2009.csv", header=T)
 
-
+###################################################################################
+###################################################################################
 # For loop to get Oct to Sept data from all needed years
 impact_summary <- data.frame()
 for(i in 1980:2009){
@@ -66,9 +78,12 @@ for(i in 1980:2009){
   impact_summary <- rbind(impact_summary,impact)
 }
 colnames(impact_summary)[5]<-"hist_year"
+###################################################################################
+
+#Write modifed yearly data
 write.csv(impact_summary,'Data/m_year.csv') #Export file
+
+#Write 30-year average
 climate_81_10 <- impact_summary %>% group_by(ID,ID2,Latitude,Longitude) %>% summarise_at(c("MAT", "MAP", "CMD"), mean, na.rm=TRUE)
 write.csv(climate_81_10,'Data/climate.csv') #Export file
-
-
-
+###################################################################################
